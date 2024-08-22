@@ -4,6 +4,8 @@ app_publisher = "Ameer Abdulaziz"
 app_description = "This is a Mokambo app."
 app_email = "ameer.abdulaziz93@gmail.com"
 app_license = "mit"
+
+fixtures = ["Custom Field"]
 # required_apps = []
 
 # Includes in <head>
@@ -114,9 +116,9 @@ app_license = "mit"
 # ---------------
 # Override standard doctype classes
 
-# override_doctype_class = {
-# 	"ToDo": "custom_app.overrides.CustomToDo"
-# }
+override_doctype_class = {
+	"Sales Order": "mokambo.overrides.sales_order.CustomSalesOrder",
+}
 
 # Document Events
 # ---------------
@@ -133,7 +135,12 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
+	"cron": {
+		"* * * * *": [
+			"mokambo.overrides.sales_order.update_days_of_delivery"
+		]
+	}
 # 	"all": [
 # 		"mokambo.tasks.all"
 # 	],
@@ -149,7 +156,7 @@ app_license = "mit"
 # 	"monthly": [
 # 		"mokambo.tasks.monthly"
 # 	],
-# }
+}
 
 # Testing
 # -------
@@ -159,9 +166,10 @@ app_license = "mit"
 # Overriding Methods
 # ------------------------------
 #
-# override_whitelisted_methods = {
-# 	"frappe.desk.doctype.event.event.get_events": "mokambo.event.get_events"
-# }
+override_whitelisted_methods = {
+	# "login": "mokambo.apis.core.users.auth.login",
+	"get_stock_items": "mokambo.apis.stock.items.get_stock_items"
+}
 #
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
