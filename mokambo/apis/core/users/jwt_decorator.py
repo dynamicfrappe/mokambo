@@ -14,7 +14,6 @@ def jwt_required(f):
 		token = frappe.request.headers.get('Authorization')
 		if not token:
 			return {
-				'status': 'error',
 				'message': _('Token is missing')
 			}, 401
 		try:
@@ -22,12 +21,10 @@ def jwt_required(f):
 			frappe.local.user = frappe.get_doc("User", payload['user'])
 		except jwt.ExpiredSignatureError:
 			return {
-				'status': 'error',
 				'message': _('Token has expired')
 			}, 401
 		except jwt.InvalidTokenError:
 			return {
-				'status': 'error',
 				'message': _('Invalid token')
 			}, 401
 		return f(*args, **kwargs)
