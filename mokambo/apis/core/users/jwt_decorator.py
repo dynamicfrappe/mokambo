@@ -13,19 +13,19 @@ def jwt_required(f):
 	def decorated_function(*args, **kwargs):
 		token = frappe.request.headers.get('Authorization')
 		if not token:
-			return {
-				'message': _('Token is missing')
-			}, 401
+			frappe.local.response["http_status_code"] = 401
+			frappe.local.response['message'] = _('Token is missing')
+			return
 		try:
 			payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
 			frappe.local.user = frappe.get_doc("User", payload['user'])
 		except jwt.ExpiredSignatureError:
-			return {
-				'message': _('Token has expired')
-			}, 401
+			frappe.local.response["http_status_code"] = 401
+			frappe.local.response['message'] = _('Token is missing')
+			return
 		except jwt.InvalidTokenError:
-			return {
-				'message': _('Invalid token')
-			}, 401
+			frappe.local.response["http_status_code"] = 401
+			frappe.local.response['message'] = _('Invalid Token')
+			return
 		return f(*args, **kwargs)
 	return decorated_function
