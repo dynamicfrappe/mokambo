@@ -1,3 +1,4 @@
+import datetime
 from functools import wraps
 
 import frappe
@@ -17,6 +18,7 @@ def jwt_required(f):
 			frappe.local.response['message'] = _('Token is missing')
 			return
 		try:
+			token = token.split(' ')[-1]
 			payload = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
 			frappe.local.user = frappe.get_doc("User", payload['user'])
 		except jwt.ExpiredSignatureError:
@@ -29,3 +31,12 @@ def jwt_required(f):
 			return
 		return f(*args, **kwargs)
 	return decorated_function
+
+
+def generate_jwt_token(user):
+	payload = {
+		'user': user,
+		'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=8)  # Token expiration
+	}
+	token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
+	return token

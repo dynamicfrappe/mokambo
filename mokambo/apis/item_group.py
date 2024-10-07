@@ -1,11 +1,11 @@
 import frappe
 
-from mokambo.apis.core.users.jwt_decorator import jwt_required
+from mokambo.apis.jwt_decorator import jwt_required
 
 
-@frappe.whitelist(allow_guest=True)
-@jwt_required
-def get_stock_items_groups():
+# @frappe.whitelist(allow_guest=True)
+# @jwt_required
+def _get_stock_items_groups():
 	# Get the token from the request headers
     # return 'get_stock_items'
 	user = frappe.local.user
@@ -15,3 +15,9 @@ def get_stock_items_groups():
 		'name', 'item_group_name',
 	])
 	frappe.local.response['data'] = items_groups
+
+
+class ItemGroupAPI:
+	@staticmethod
+	def get(cls, **kwargs):
+		_get_stock_items_groups()

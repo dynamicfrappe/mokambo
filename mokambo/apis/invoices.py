@@ -1,7 +1,7 @@
 import frappe
 from frappe import _
 
-from mokambo.apis.core.users.jwt_decorator import jwt_required
+from mokambo.apis.jwt_decorator import jwt_required
 
 
 @frappe.whitelist(allow_guest=True, methods=['POST'])
@@ -49,5 +49,15 @@ def create_pos_invoice():
 @frappe.whitelist(allow_guest=True, methods=['GET'])
 @jwt_required
 def get_pos_invoices():
-	invoices = frappe.get_all('Sales Invoice', fields=['name', 'customer', 'customer_name'])
+	invoices = frappe.get_all('Sales Invoice', fields=[
+		'name', 'posting_date', 'grand_total', 'customer', 'customer_name', 'outstanding_amount',
+		'status', 'is_return'
+	])
 	frappe.local.response['data'] = invoices
+
+
+@frappe.whitelist(allow_guest=True, methods=['GET'])
+@jwt_required
+def get_pos_invoice(name):
+	invoice = frappe.get_doc(doctype='Sales Invoice', filters={'name': name})
+	frappe.local.response['data'] = invoice.items

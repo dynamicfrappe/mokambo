@@ -1,6 +1,6 @@
 import frappe
 
-from mokambo.apis.core.users.jwt_decorator import jwt_required
+from mokambo.apis.jwt_decorator import jwt_required
 
 
 @frappe.whitelist(allow_guest=True)

@@ -165,12 +165,13 @@ scheduler_events = {
 
 # Overriding Methods
 # ------------------------------
-#
 override_whitelisted_methods = {
-	# "login": "mokambo.apis.core.users.auth.login",
-	"get_stock_items": "mokambo.apis.stock.items.get_stock_items"
+	"login-user": "mokambo.apis.auth.login_user",
+	"products": "mokambo.apis.routes.item_api",
+	"categories": "mokambo.apis.routes.item_group_api",
+	"sales-invoices": "mokambo.apis.routes.sales_invoice_api",
 }
-#
+
 # each overriding function accepts a `data` argument;
 # generated from the base implementation of the doctype dashboard,
 # along with any modifications made in other Frappe apps
@@ -235,3 +236,11 @@ override_whitelisted_methods = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
+# app_include_urls = "mokambo.apis.stock.items.get_stock_items"
+#
+# routes = [
+#     {
+# 		"from_route": "/api/method/mokambo/apis/stock/items/get_stock_items",
+# 	 	"to_route": "mokambo.apis.stock.items.get_stock_items"
+# 	}
+# ]
