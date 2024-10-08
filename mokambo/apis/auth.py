@@ -44,6 +44,23 @@ def login_user(username=None, password=None):
 		frappe.local.response["message"] = _('Invalid password')
 		return
 
+	user_profile = get_user_pos_profile(user.name)
+	print('user_profile ==> ', user_profile)
+	# Fetch the POS Profile linked to the logged-in user
+	# user_profile = frappe.get_value(
+	# 	"POS Profile User",
+	# 	{"user": user.name},
+	# 	["name"]
+	# )
+
+	# print(user_profile)
+	if user_profile:
+		user_profile = user_profile
+	else:
+		frappe.local.response["http_status_code"] = 403
+		frappe.local.response["message"] = _('User has no POS Profile')
+		return
+
 	# Generate JWT token for the user
 	token = generate_jwt_token(user.name)
 
@@ -51,10 +68,21 @@ def login_user(username=None, password=None):
 		'token': token,
 		'user': user.username or user.name,
 		'full_name': user.full_name or user.name,
-		# 'branch': branch,
+		'user_profile': user_profile,
 	}
 
 	# Clear unwanted keys from the response
 	frappe.local.response.pop('message', None)
 	frappe.local.response.pop('home_page', None)
 	frappe.local.response.pop('full_name', None)
+
+
+@frappe.whitelist(allow_guest=False)
+def get_user_pos_profile(user):
+	# Fetch the POS Profile linked to the user via the POS Profile User child table
+	pos_profile = frappe.db.get_value(
+		"POS Profile User",
+		{"user": user},
+		["parent"],  # This retrieves the parent (POS Profile) linked to the user
+	)
+	return pos_profile

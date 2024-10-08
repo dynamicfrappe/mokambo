@@ -4,7 +4,7 @@ from frappe import _
 
 class SalesInvoiceAPI:
 	@staticmethod
-	def get(**kwargs):
+	def get(cls, **kwargs):
 		"""Fetch a list or a specific Sales invoice"""
 		sales_invoice_id = kwargs.get('sales_invoice_id')
 		if sales_invoice_id:
@@ -22,7 +22,6 @@ class SalesInvoiceAPI:
 				frappe.local.response['http_status_code'] = 500  # HTTP 500 Internal Server Error
 				frappe.local.response['message'] = _("Unable to fetch Sales Invoice: {0}").format(str(e))
 		else:
-			print('get all')
 			try:
 				sales_invoices = frappe.get_all('Sales Invoice', fields=['name', 'customer'])
 				# Success Response
@@ -34,8 +33,7 @@ class SalesInvoiceAPI:
 				frappe.local.response['message'] = _("Unable to fetch Sales Invoices: {0}").format(str(e))
 
 	@staticmethod
-	def post(**kwargs):
-		print('kwargs ==> ', kwargs)
+	def post(cls, **kwargs):
 		"""Create a new Sales Invoice."""
 		try:
 			new_sales_invoice = frappe.get_doc({
@@ -50,7 +48,7 @@ class SalesInvoiceAPI:
 			frappe.throw(_("Unable to create Sales Invoice: {0}").format(str(e)))
 
 	@staticmethod
-	def put(**kwargs):
+	def put(cls, **kwargs):
 		"""Update an existing Sales Invoice."""
 		sales_invoice_id = kwargs.get('sales_invoice_id')
 		try:
@@ -65,7 +63,7 @@ class SalesInvoiceAPI:
 			frappe.throw(_("Unable to update Sales Invoice: {0}").format(str(e)))
 
 	@staticmethod
-	def delete(**kwargs):
+	def delete(cls, **kwargs):
 		"""Delete an existing Sales Invoice."""
 		sales_invoice_id = kwargs.get('sales_invoice_id')
 		try:

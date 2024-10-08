@@ -11,7 +11,6 @@ def create_pos_invoice():
 	items = frappe.form_dict.get("items")
 	payments = frappe.form_dict.get("payments")
 	is_submit = frappe.form_dict.get("is_submit")
-	print(frappe.form_dict)
 	if not customer or not items or not payments:
 		return {
 			"status": "error",
