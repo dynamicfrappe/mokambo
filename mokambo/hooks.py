@@ -173,6 +173,7 @@ override_whitelisted_methods = {
 	"pos-profiles": "mokambo.apis.routes.pos_profiles_api",
 	"customers": "mokambo.apis.routes.customers_api",
 	"payment-methods": "mokambo.apis.routes.payment_methods_api",
+	'pos-invoices': "mokambo.apis.routes.pos_invoices_api",
 }
 
 # each overriding function accepts a `data` argument;

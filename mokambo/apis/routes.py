@@ -6,6 +6,7 @@ from mokambo.apis.jwt_decorator import jwt_required
 from mokambo.apis.item import ItemAPI
 from mokambo.apis.item_group import ItemGroupAPI
 from mokambo.apis.payment_method import PaymentMethodAPI
+from mokambo.apis.pos_invoice import POSInvoiceAPI
 from mokambo.apis.pos_profiles import POSProfileAPI
 from mokambo.apis.sales_invoice import SalesInvoiceAPI
 
@@ -87,3 +88,9 @@ def customers_api(**kwargs):
 @jwt_required
 def payment_methods_api(**kwargs):
 	_routes_api(PaymentMethodAPI, **kwargs)
+
+
+@frappe.whitelist(allow_guest=True)
+@jwt_required
+def pos_invoices_api(**kwargs):
+	_routes_api(POSInvoiceAPI, **kwargs)

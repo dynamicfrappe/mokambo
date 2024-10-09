@@ -7,8 +7,23 @@ from frappe import _
 def _get_customers(**kwargs):
 	"""Fetch a list of Customers"""
 	try:
+		filters = []
+		customer_name = kwargs.get('customer_name')
+		mobile_no = kwargs.get('mobile_no')
+
+		# Add filters using icontains (LIKE %value%) for case-insensitive search
+		if customer_name:
+			filters.append(['customer_name', 'like', f'%{customer_name}%'])
+		if mobile_no:
+			filters.append(['mobile_no', 'like', f'%{mobile_no}%'])
+
 		# Fetch all POS Profile documents with necessary fields
-		customers = frappe.get_list('Customer', fields=['name', 'customer_name'])
+		customers = frappe.get_list(
+			'Customer',
+			fields=['name', 'customer_name', 'mobile_no'],
+			filters=filters,
+			ignore_permissions=True
+		)
 
 		# Success Response
 		frappe.local.response['http_status_code'] = 200  # HTTP 200 OK
