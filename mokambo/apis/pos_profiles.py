@@ -6,7 +6,9 @@ def _get_pos_profiles(**kwargs):
 	"""Fetch a list of POS Profiles"""
 	try:
 		# Fetch all POS Profile documents with necessary fields
-		pos_profiles = frappe.get_list('POS Profile', pluck='name')
+		pos_profiles = frappe.get_list(
+			'POS Profile', fields=['name'], ignore_permissions=True
+		)
 
 		# Success Response
 		frappe.local.response['http_status_code'] = 200  # HTTP 200 OK
@@ -19,5 +21,5 @@ def _get_pos_profiles(**kwargs):
 
 class POSProfileAPI:
 	@staticmethod
-	def get(cls, **kwargs):
+	def get(**kwargs):
 		_get_pos_profiles(**kwargs)

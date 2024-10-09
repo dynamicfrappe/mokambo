@@ -19,5 +19,5 @@ def _get_stock_items_groups():
 
 class ItemGroupAPI:
 	@staticmethod
-	def get(cls, **kwargs):
+	def get(**kwargs):
 		_get_stock_items_groups()

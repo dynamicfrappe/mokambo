@@ -5,43 +5,52 @@ from mokambo.apis.customer import CustomerAPI
 from mokambo.apis.jwt_decorator import jwt_required
 from mokambo.apis.item import ItemAPI
 from mokambo.apis.item_group import ItemGroupAPI
+from mokambo.apis.payment_method import PaymentMethodAPI
 from mokambo.apis.pos_profiles import POSProfileAPI
 from mokambo.apis.sales_invoice import SalesInvoiceAPI
+
+
+def _check_and_get_method(cls: type, method: str):
+	"""
+	Check if the method exists in the class and return the method.
+
+	Args:
+		cls (type): The class to check.
+		method (str): The HTTP method (GET, POST, etc.).
+
+	Returns:
+		callable: The class method if it exists, otherwise None.
+	"""
+	method_name = method.lower()
+	if hasattr(cls, method_name):
+		return getattr(cls, method_name)
+
+	frappe.local.response['http_status_code'] = 405  # HTTP 405 Method Not Allowed
+	frappe.local.response['message'] = _("Method not allowed.")
+	return None
 
 
 def _routes_api(cls, **kwargs):
 	method = frappe.request.method
 	record_id = kwargs.get('id')
-	if method == 'GET':
-		try:
-			if id:
-				return cls.get(record_id, **kwargs)  # Get a single sales invoice
-			else:
-				return cls.get(**kwargs)  # Get all sales invoices
-		except AttributeError as e:
-			frappe.local.response['http_status_code'] = 405  # HTTP 405 Method Not Allowed
-			frappe.local.response['message'] = (_("Method not allowed."))
-	elif method == 'POST':
-		try:
-			return cls.post(**kwargs)  # Create a new sales invoice
-		except AttributeError as e:
-			frappe.local.response['http_status_code'] = 405  # HTTP 405 Method Not Allowed
-			frappe.local.response['message'] = (_("Method not allowed."))
-	elif method == 'PUT':
-		try:
-			return cls.put(record_id, **kwargs)  # Update an existing sales invoice
-		except AttributeError as e:
-			frappe.local.response['http_status_code'] = 405  # HTTP 405 Method Not Allowed
-			frappe.local.response['message'] = (_("Method not allowed."))
-	elif method == 'DELETE':
-		try:
-			return cls.delete(record_id, **kwargs)  # Delete an existing sales invoice
-		except AttributeError as e:
-			frappe.local.response['http_status_code'] = 405  # HTTP 405 Method Not Allowed
-			frappe.local.response['message'] = (_("Method not allowed."))
+
+	# Create an instance of the class if methods are instance methods
+	instance = cls()
+
+	# Define the method mappings
+	method_map = {
+		'GET': lambda: instance.get(record_id, **kwargs) if record_id else instance.get(**kwargs),
+		'POST': lambda: instance.post(**kwargs),
+		'PUT': lambda: instance.put(record_id, **kwargs),
+		'DELETE': lambda: instance.delete(record_id, **kwargs)
+	}
+
+	# Check if the method is allowed and exists
+	api_method = _check_and_get_method(cls, method)
+	if api_method:
+		return method_map[method]()  # Execute the appropriate method
 	else:
-		frappe.local.response['http_status_code'] = 405  # HTTP 405 Method Not Allowed
-		frappe.local.response['message'] = (_("Method not allowed."))
+		return None
 
 
 @frappe.whitelist(allow_guest=True)
@@ -72,3 +81,9 @@ def pos_profiles_api(**kwargs):
 @jwt_required
 def customers_api(**kwargs):
 	_routes_api(CustomerAPI, **kwargs)
+
+
+@frappe.whitelist(allow_guest=True)
+@jwt_required
+def payment_methods_api(**kwargs):
+	_routes_api(PaymentMethodAPI, **kwargs)

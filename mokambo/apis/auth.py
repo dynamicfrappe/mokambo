@@ -35,7 +35,6 @@ def login_user(username=None, password=None):
 	# Check the password using Frappe's authentication mechanism
 	try:
 		frappe.auth.check_password(user.name, password)
-		print('check password ==> ', frappe.auth.check_password(user.name, password))
 		# Perform the actual login action
 		frappe.local.login_manager.authenticate(user.name, password)
 		frappe.local.login_manager.post_login()
@@ -45,34 +44,26 @@ def login_user(username=None, password=None):
 		return
 
 	user_profile = get_user_pos_profile(user.name)
-	print('user_profile ==> ', user_profile)
-	# Fetch the POS Profile linked to the logged-in user
-	# user_profile = frappe.get_value(
-	# 	"POS Profile User",
-	# 	{"user": user.name},
-	# 	["name"]
-	# )
 
-	# print(user_profile)
 	if user_profile:
 		user_profile = user_profile
+
+		# Generate JWT token for the user
+		token = generate_jwt_token(user.name)
+
+		frappe.local.response['data'] = {
+			'token': token,
+			'user': user.username or user.name,
+			'full_name': user.full_name or user.name,
+			'user_profile': user_profile,
+		}
+		frappe.local.response.pop('message', None)
 	else:
 		frappe.local.response["http_status_code"] = 403
 		frappe.local.response["message"] = _('User has no POS Profile')
-		return
 
-	# Generate JWT token for the user
-	token = generate_jwt_token(user.name)
-
-	frappe.local.response['data'] = {
-		'token': token,
-		'user': user.username or user.name,
-		'full_name': user.full_name or user.name,
-		'user_profile': user_profile,
-	}
-
+	# Remove unnecessary data from the response
 	# Clear unwanted keys from the response
-	frappe.local.response.pop('message', None)
 	frappe.local.response.pop('home_page', None)
 	frappe.local.response.pop('full_name', None)
 

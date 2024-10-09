@@ -1,3 +1,5 @@
+from dataclasses import fields
+
 import frappe
 from frappe import _
 
@@ -6,7 +8,7 @@ def _get_customers(**kwargs):
 	"""Fetch a list of Customers"""
 	try:
 		# Fetch all POS Profile documents with necessary fields
-		customers = frappe.get_list('Customer', pluck='name')
+		customers = frappe.get_list('Customer', fields=['name', 'customer_name'])
 
 		# Success Response
 		frappe.local.response['http_status_code'] = 200  # HTTP 200 OK
@@ -19,5 +21,5 @@ def _get_customers(**kwargs):
 
 class CustomerAPI:
 	@staticmethod
-	def get(cls, **kwargs):
+	def get(**kwargs):
 		_get_customers(**kwargs)
