@@ -169,7 +169,6 @@ override_whitelisted_methods = {
 	"login-user": "mokambo.apis.auth.login_user",
 	"products": "mokambo.apis.routes.item_api",
 	"categories": "mokambo.apis.routes.item_group_api",
-	"sales-invoices": "mokambo.apis.routes.sales_invoice_api",
 	"pos-profiles": "mokambo.apis.routes.pos_profiles_api",
 	"customers": "mokambo.apis.routes.customers_api",
 	"payment-methods": "mokambo.apis.routes.payment_methods_api",

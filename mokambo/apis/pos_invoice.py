@@ -4,6 +4,17 @@ from frappe import _
 from mokambo.apis.auth import get_user_pos_profile
 
 
+def _get_payment_mode(default=False):
+	"""Get the default mode of payment from the POS Profile"""
+	user = frappe.local.user
+	pos_profile = get_user_pos_profile(user.name)
+	pos_profile = frappe.get_doc('POS Profile', pos_profile)
+	if default:
+		return pos_profile.get('payments')[0].get('mode_of_payment')
+	else:
+		return pos_profile.get('payments')
+
+
 def create_pos_invoice(**kwargs):
 	"""Create a new POS Invoice"""
 	try:
@@ -16,10 +27,7 @@ def create_pos_invoice(**kwargs):
 				return
 
 		# Fetch the default mode of payment from the POS Profile
-		user = frappe.local.user
-		pos_profile = get_user_pos_profile(user.name)
-		pos_profile = frappe.get_doc('POS Profile', pos_profile)
-		default_payment_mode = pos_profile.get('payments')[0].get('mode_of_payment')  # Default to 'Cash' if not found
+		default_payment_mode = _get_payment_mode(default=True)
 
 		# Create a new POS Invoice document
 		pos_invoice = frappe.get_doc({
@@ -61,27 +69,52 @@ def create_pos_invoice(**kwargs):
 class POSInvoiceAPI:
 	@staticmethod
 	def get(**kwargs):
-		"""Fetch a list or a specific Sales invoice"""
-		"""Fetch a list or a specific Sales invoice"""
-		sales_invoice_id = kwargs.get('sales_invoice_id')
+		"""Fetch a list or a specific POS invoice"""
+		"""Fetch a list or a specific POS invoice"""
 		page = int(kwargs.get('page', 1))  # Default to page 1 if not provided
 		page_size = int(kwargs.get('page_size', 10))  # Default to 10 records per page
 
-		sales_invoice_id = kwargs.get('sales_invoice_id')
-		if sales_invoice_id:
+		pos_invoice_id = kwargs.get('pos_invoice_id')
+
+		if pos_invoice_id:
 			try:
-				sales_invoice = frappe.get_doc('POS Invoice', sales_invoice_id)
+				# Fetch the main POS Invoice fields
+				pos_invoice = frappe.db.get_value(
+					'POS Invoice', pos_invoice_id,
+					['name', 'customer', 'grand_total', 'status', 'docstatus','total_net_weight'],
+					as_dict=True
+				)
+				# print('pos_invoice ==> ', pos_invoice)
+				items = frappe.get_all(
+					'POS Invoice Item',  # Child DocType
+					filters={'parent': pos_invoice_id},  # Filter by the parent (POS Invoice)
+					fields=['item_code', 'item_name', 'qty', 'rate', 'amount', 'total_weight', 'uom'],
+					# Fetch specific fields from the child table
+				)
+				# Fetch the payments from the child table
+				payments = _get_payment_mode()
+				customer = frappe.get_value(
+					'Customer',
+					pos_invoice.get('customer'),
+					['name', 'customer_name', 'mobile_no'],
+					as_dict=True
+				)
+				# Add items and payments to the pos_invoice dict
+				pos_invoice['items'] = items
+				pos_invoice['customer'] = customer
+				pos_invoice['default_payment_mode'] = _get_payment_mode(default=True)
+				pos_invoice['payments'] = payments
 				# Success Response
 				frappe.local.response['http_status_code'] = 200  # HTTP 200 OK
-				frappe.local.response['data'] = sales_invoice
+				frappe.local.response['data'] = pos_invoice
 			except frappe.DoesNotExistError:
-				# If sales invoice does not exist
+				# If pos invoice does not exist
 				frappe.local.response['http_status_code'] = 404  # HTTP 404 Not Found
-				frappe.local.response['message'] = _("Sales Invoice {0} not found").format(sales_invoice_id)
+				frappe.local.response['message'] = _("POS Invoice {0} not found").format(pos_invoice_id)
 			except Exception as e:
 				# Generic error handling
 				frappe.local.response['http_status_code'] = 500  # HTTP 500 Internal Server Error
-				frappe.local.response['message'] = _("Unable to fetch Sales Invoice: {0}").format(str(e))
+				frappe.local.response['message'] = _("Unable to fetch POS Invoice: {0}").format(str(e))
 		else:
 			try:
 				# Calculate the starting record
@@ -95,7 +128,7 @@ class POSInvoiceAPI:
 					'POS Invoice',
 					fields=[
 						'name', 'customer', 'posting_date', 'posting_time', 'contact_mobile',
-						'grand_total', 'outstanding_amount', 'status', 'is_return',
+						'grand_total', 'outstanding_amount', 'status', 'docstatus','is_return',
 					],
 					filters=filters,
 					limit_start=start,  # Start from this record
@@ -104,7 +137,7 @@ class POSInvoiceAPI:
 				)
 
 				# Fetch total number of records (for calculating total pages)
-				total_records = frappe.db.count('POS Invoice')
+				total_records = frappe.db.count('POS Invoice', filters=filters)
 				total_pages = (total_records + page_size - 1) // page_size  # Calculate total pages
 
 				# Success Response
@@ -119,11 +152,11 @@ class POSInvoiceAPI:
 			except Exception as e:
 				# Generic error handling
 				frappe.local.response['http_status_code'] = 500  # HTTP 500 Internal Server Error
-				frappe.local.response['message'] = _("Unable to fetch Sales Invoices: {0}").format(str(e))
+				frappe.local.response['message'] = _("Unable to fetch POS Invoices: {0}").format(str(e))
 
 	@staticmethod
 	def post(**kwargs):
-		"""Create a new Sales Invoice."""
+		"""Create a new POS Invoice."""
 		try:
 			create_pos_invoice(**kwargs)
 		except frappe.ValidationError as ve:
@@ -132,15 +165,43 @@ class POSInvoiceAPI:
 
 	@staticmethod
 	def put(**kwargs):
-		"""Update an existing Sales Invoice."""
-		sales_invoice_id = kwargs.get('sales_invoice_id')
+		"""Update an existing POS Invoice."""
+		pos_invoice_id = kwargs.pop('pos_invoice_id')
 		try:
-			sales_invoice = frappe.get_doc('Sales Invoice', sales_invoice_id)
-			sales_invoice.update(kwargs)
-			sales_invoice.save()
-			return {
-				"message": _("Sales Invoice {0} updated successfully").format(sales_invoice_id)}
+
+			pos_invoice = frappe.get_all(
+				'POS Invoice',
+				filters={'name': pos_invoice_id},
+				ignore_permissions=True
+			)
+
+			if pos_invoice:
+				pos_invoice = frappe.get_doc('POS Invoice', pos_invoice[0].name)
+
+			if pos_invoice.docstatus == 1:
+				# Invoice is submitted
+				frappe.local.response['message'] = _("POS Invoice {0} is already submitted").format(pos_invoice_id)
+				frappe.local.response['http_status_code'] = 400  # HTTP 404 Not Found
+				return
+			# Update customer field if provided
+			if 'customer' in kwargs:
+				pos_invoice.customer = kwargs.get('customer')
+
+			# Update payments if provided
+			if 'payments' in kwargs:
+				# Clear existing payments
+				for payment_data in kwargs['payments']:
+					pos_invoice.append('payments', payment_data)
+			# frappe.db.set_value("POS Invoice", pos_invoice, {"customer", kwargs.get('customer')})
+			pos_invoice.save(ignore_permissions=True)
+			pos_invoice.submit()
+			frappe.db.commit()
+			frappe.local.response['message'] = _("POS Invoice {0} updated successfully").format(pos_invoice_id)
 		except frappe.DoesNotExistError:
-			frappe.throw(_("Sales Invoice {0} not found").format(sales_invoice_id))
+			# If POS invoice does not exist
+			frappe.local.response['http_status_code'] = 404  # HTTP 404 Not Found
+			frappe.local.response['message'] = _("POS Invoice {0} not found").format(pos_invoice_id)
 		except Exception as e:
-			frappe.throw(_("Unable to update Sales Invoice: {0}").format(str(e)))
+			# Generic error handling
+			frappe.local.response['http_status_code'] = 500  # HTTP 500 Internal Server Error
+			frappe.local.response['message'] = _("Unable to fetch POS Invoices: {0}").format(str(e))

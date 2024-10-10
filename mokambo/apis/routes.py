@@ -8,7 +8,6 @@ from mokambo.apis.item_group import ItemGroupAPI
 from mokambo.apis.payment_method import PaymentMethodAPI
 from mokambo.apis.pos_invoice import POSInvoiceAPI
 from mokambo.apis.pos_profiles import POSProfileAPI
-from mokambo.apis.sales_invoice import SalesInvoiceAPI
 
 
 def _check_and_get_method(cls: type, method: str):
@@ -40,10 +39,10 @@ def _routes_api(cls, **kwargs):
 
 	# Define the method mappings
 	method_map = {
-		'GET': lambda: instance.get(record_id, **kwargs) if record_id else instance.get(**kwargs),
+		'GET': lambda: instance.get(**kwargs) if record_id else instance.get(**kwargs),
 		'POST': lambda: instance.post(**kwargs),
-		'PUT': lambda: instance.put(record_id, **kwargs),
-		'DELETE': lambda: instance.delete(record_id, **kwargs)
+		'PUT': lambda: instance.put(**kwargs),
+		'DELETE': lambda: instance.delete(**kwargs)
 	}
 
 	# Check if the method is allowed and exists
@@ -64,12 +63,6 @@ def item_api(**kwargs):
 @jwt_required
 def item_group_api(**kwargs):
 	_routes_api(ItemGroupAPI, **kwargs)
-
-
-@frappe.whitelist(allow_guest=True)
-@jwt_required
-def sales_invoice_api(**kwargs):
-	_routes_api(SalesInvoiceAPI, **kwargs)
 
 
 @frappe.whitelist(allow_guest=True)
