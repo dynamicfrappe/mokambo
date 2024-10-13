@@ -6,7 +6,6 @@ from mokambo.apis.jwt_decorator import generate_jwt_token
 
 @frappe.whitelist(allow_guest=True)
 def login_user(username=None, password=None):
-	print('here')
 	# Check if username or password is missing
 	if not username or not password:
 		frappe.local.response["http_status_code"] = 400

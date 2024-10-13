@@ -2,6 +2,7 @@ import frappe
 from frappe import _
 
 from mokambo.apis.auth import get_user_pos_profile
+from mokambo.apis.item import _get_bulk_item_prices, _get_bulk_item_stock, _get_items_stock_prices
 
 
 def _get_payment_mode(default=False):
@@ -91,6 +92,7 @@ class POSInvoiceAPI:
 					fields=['item_code', 'item_name', 'qty', 'rate', 'amount', 'total_weight', 'uom'],
 					# Fetch specific fields from the child table
 				)
+				items = _get_items_stock_prices(items)
 				# Fetch the payments from the child table
 				payments = _get_payment_mode()
 				customer = frappe.get_value(

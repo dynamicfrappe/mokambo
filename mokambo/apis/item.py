@@ -88,26 +88,11 @@ def _get_unique_uom_prices(uom_prices):
 	return list(unique_uom_prices.values())
 
 
-def get_items_prices(**kwargs):
-	"""Fetch items with prices and stock in bulk."""
-	item_group = kwargs.get('item_group')
+def _get_items_stock_prices(items):
+	"""Get stock and prices for all items."""
 
 	# Fetch warehouse from the POS profile of the logged-in user
 	warehouse = get_user_warehouse()
-	# Fetch all items in one query
-	filters = {}
-	if item_group and item_group != 'All Item Groups':
-		filters['item_group'] = item_group
-
-	items = frappe.get_all(
-		'Item',
-		fields=[
-			'name', 'item_name', 'item_code', 'image', 'description', 'item_group',
-			'standard_rate', 'stock_uom'
-		],
-		filters=filters,
-		ignore_permissions=True
-	)
 
 	# Fetch item codes
 	item_codes = [item['item_code'] for item in items]
@@ -115,7 +100,6 @@ def get_items_prices(**kwargs):
 	# Fetch all prices and stock in bulk
 	prices_map = _get_bulk_item_prices(item_codes)
 	stock_map = _get_bulk_item_stock(item_codes, warehouse)
-
 	# Attach stock and prices to the items
 	for item in items:
 		uom_prices = prices_map.get(item['item_code'], [])
@@ -134,8 +118,29 @@ def get_items_prices(**kwargs):
 			uom_price['quantity'] = stock_map.get(item['item_code'], {}).get(uom_price['uom'], 0)
 
 		item['uom_prices'] = _get_unique_uom_prices(uom_prices)
+	return items
 
-	frappe.local.response['data'] = items
+
+def get_items_prices(**kwargs):
+	"""Fetch items with prices and stock in bulk."""
+	item_group = kwargs.get('item_group')
+
+
+	# Fetch all items in one query
+	filters = {}
+	if item_group and item_group != 'All Item Groups':
+		filters['item_group'] = item_group
+
+	items = frappe.get_all(
+		'Item',
+		fields=[
+			'name', 'item_name', 'item_code', 'image', 'description', 'item_group',
+			'standard_rate', 'stock_uom'
+		],
+		filters=filters,
+		ignore_permissions=True
+	)
+	frappe.local.response['data'] = _get_items_stock_prices(items)
 
 
 class ItemAPI:
