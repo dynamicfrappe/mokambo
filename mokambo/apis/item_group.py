@@ -11,9 +11,10 @@ def _get_stock_items_groups():
 	user = frappe.local.user
 	cashier = frappe.get_doc('User', user)
 
-	items_groups = frappe.get_all('Item Group', fields=[
-		'name', 'item_group_name',
-	])
+	items_groups = frappe.get_all('Item Group', 
+	filters = {'is_group': 0},
+	fields=['name', 'item_group_name',],
+	)
 	frappe.local.response['data'] = items_groups
 
 

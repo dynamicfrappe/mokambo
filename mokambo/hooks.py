@@ -5,7 +5,7 @@ app_description = "This is a Mokambo app."
 app_email = "ameer.abdulaziz93@gmail.com"
 app_license = "mit"
 
-fixtures = ["Custom Field"]
+# fixtures = ["Custom Field"]
 # required_apps = []
 
 # Includes in <head>
@@ -70,7 +70,9 @@ fixtures = ["Custom Field"]
 # ------------
 
 # before_install = "mokambo.install.before_install"
-# after_install = "mokambo.install.after_install"
+after_install = "mokambo.install.after_install"
+
+after_migrate = "mokambo.install.after_install"
 
 # Uninstallation
 # ------------
@@ -173,6 +175,7 @@ override_whitelisted_methods = {
 	"customers": "mokambo.apis.routes.customers_api",
 	"payment-methods": "mokambo.apis.routes.payment_methods_api",
 	'pos-invoices': "mokambo.apis.routes.pos_invoices_api",
+	'shift':"mokambo.apis.routes.shift_api",
 }
 
 # each overriding function accepts a `data` argument;
@@ -227,6 +230,10 @@ override_whitelisted_methods = {
 
 # Authentication and authorization
 # --------------------------------
+
+domains = {
+    "Mokambo" : "mokambo.domains.mokambo",
+}
 
 # auth_hooks = [
 # 	"mokambo.auth.validate"

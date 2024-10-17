@@ -8,6 +8,8 @@ from mokambo.apis.item_group import ItemGroupAPI
 from mokambo.apis.payment_method import PaymentMethodAPI
 from mokambo.apis.pos_invoice import POSInvoiceAPI
 from mokambo.apis.pos_profiles import POSProfileAPI
+from mokambo.apis.shift import ShiftAPI
+
 
 
 def _check_and_get_method(cls: type, method: str):
@@ -87,3 +89,8 @@ def payment_methods_api(**kwargs):
 @jwt_required
 def pos_invoices_api(**kwargs):
 	_routes_api(POSInvoiceAPI, **kwargs)
+
+@frappe.whitelist(allow_guest=True)
+@jwt_required
+def shift_api(**kwargs):
+	_routes_api(ShiftAPI, **kwargs)

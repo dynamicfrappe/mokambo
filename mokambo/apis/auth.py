@@ -43,10 +43,11 @@ def login_user(username=None, password=None):
 		frappe.local.response["message"] = _('Invalid password')
 		return
 
-	user_profile = get_user_pos_profile(user.name)
+	user_profile_info = get_user_pos_profile(user.name)
 
-	if user_profile:
-		user_profile = user_profile
+	if user_profile_info:
+		user_profile = user_profile_info[0]
+		user_role = user_profile_info[1]
 
 		# Generate JWT token for the user
 		token = generate_jwt_token(user.name)
@@ -56,6 +57,7 @@ def login_user(username=None, password=None):
 			'user': user.username or user.name,
 			'full_name': user.full_name or user.name,
 			'user_profile': user_profile,
+			'user_role' : user_role,
 		}
 		frappe.local.response.pop('message', None)
 	else:
@@ -76,4 +78,9 @@ def get_user_pos_profile(user):
 		{"user": user},
 		["parent"],  # This retrieves the parent (POS Profile) linked to the user
 	)
-	return pos_profile
+	role_type = frappe.db.get_value(
+		"POS Profile User",
+		{"user": user, "parent": pos_profile},
+		["role_type"],  # This retrieves the role type of that user in the POS Profile
+	)
+	return pos_profile , role_type
