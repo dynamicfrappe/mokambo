@@ -9,6 +9,7 @@ from mokambo.apis.payment_method import PaymentMethodAPI
 from mokambo.apis.pos_invoice import POSInvoiceAPI
 from mokambo.apis.pos_profiles import POSProfileAPI
 from mokambo.apis.shift import ShiftAPI
+from mokambo.apis.address import AddressAPI
 
 
 
@@ -94,3 +95,9 @@ def pos_invoices_api(**kwargs):
 @jwt_required
 def shift_api(**kwargs):
 	_routes_api(ShiftAPI, **kwargs)
+
+@frappe.whitelist(allow_guest=True)
+@jwt_required
+def address_api(**kwargs):
+	_routes_api(AddressAPI, **kwargs)
+	

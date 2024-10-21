@@ -55,10 +55,12 @@ def create_pos_invoice(**kwargs):
 
 		# Insert the document into the database
 		pos_invoice.insert(ignore_permissions=True)
+
 		if kwargs['bookingType'] == 'payment-later':
 			dt_object =  datetime.strptime(kwargs['receivingTime'], "%I:%M %p")
 			pos_invoice.delivery_date = kwargs.get('posting_date', frappe.utils.nowdate())
 			pos_invoice.delivery_time = dt_object.strftime("%H:%M:00")
+
 		pos_invoice.save()
 		frappe.db.commit()
 
@@ -101,6 +103,7 @@ class POSInvoiceAPI:
 					# If pos invoice does not exist
 					frappe.local.response['http_status_code'] = 404  # HTTP 404 Not Found
 					frappe.local.response['message'] = _("POS Invoice {0} not found").format(pos_invoice_id)
+					return
 				# print('pos_invoice ==> ', pos_invoice)
 				items = frappe.get_all(
 					'Sales Invoice Item',  # Child DocType
