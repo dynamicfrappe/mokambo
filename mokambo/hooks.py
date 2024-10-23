@@ -30,7 +30,7 @@ app_license = "mit"
 # page_js = {"page" : "public/js/file.js"}
 
 # include js in doctype views
-# doctype_js = {"doctype" : "public/js/doctype.js"}
+doctype_js = {"POS Profile" : "public/js/pos_profile.js"}
 # doctype_list_js = {"doctype" : "public/js/doctype_list.js"}
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
@@ -177,6 +177,8 @@ override_whitelisted_methods = {
 	'pos-invoices': "mokambo.apis.routes.pos_invoices_api",
 	'shift':"mokambo.apis.routes.shift_api",
 	'address': "mokambo.apis.routes.address_api",
+	'delivery': "mokambo.apis.routes.delivery_api",
+	'global': "mokambo.apis.routes.global_api",
 }
 
 # each overriding function accepts a `data` argument;
@@ -233,7 +235,7 @@ override_whitelisted_methods = {
 # --------------------------------
 
 domains = {
-    "Mokambo" : "mokambo.domains.mokambo",
+	"Mokambo" : "mokambo.domains.mokambo",
 }
 
 # auth_hooks = [

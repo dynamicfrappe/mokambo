@@ -27,6 +27,7 @@ def create_address(kwargs, customer):
 	address.address_line1 = kwargs.get('address')
 	address.city = kwargs.get('zone')
 	address.country = "Egypt"
+	address.phone = kwargs.get('mobile_no')
 	address.append('links', {
 		"link_doctype": "Customer",
 		"link_name": customer.name,

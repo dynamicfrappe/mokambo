@@ -30,6 +30,12 @@ def create_pos_invoice(**kwargs):
 			if field == 'bookingType':
 				if kwargs['bookingType'] == 'payment-later':
 					required_fields.append('receivingTime')
+				if kwargs['bookingType'] == 'reservation':
+					required_fields.append('receivingDate')
+				if kwargs['bookingType'] == 'delivery':
+					required_fields.append('zone')
+					required_fields.append('address_id')
+
 
 		# Fetch the default mode of payment from the POS Profile
 		default_payment_mode = _get_payment_mode(default=True)
@@ -39,6 +45,9 @@ def create_pos_invoice(**kwargs):
 			'doctype': 'Sales Invoice',
 			'customer': kwargs['customer'],
 			'due_date': kwargs.get('posting_date', frappe.utils.nowdate()),
+			'request_source': kwargs.get('requestSource', 'Branch'),
+			'is_pos': 1,  # Mark as POS Invoice
+			'bookingtype': kwargs['bookingType'],
 			'items': [{
 				'item_code': item['item_code'],
 				'qty': item['qty'],
@@ -47,20 +56,40 @@ def create_pos_invoice(**kwargs):
 			'payments': [
 				{'mode_of_payment': default_payment_mode}  # Use the default payment mode from the POS Profile
 			],
-			'is_pos': 1,  # Mark as POS Invoice
 			'posting_date': kwargs.get('posting_date', frappe.utils.nowdate()),  # Optional field
 			'posting_time': kwargs.get('posting_time', frappe.utils.nowtime()),  # Optional field
-			'bookingtype': kwargs['bookingType'],
+			'pos_profile': kwargs.get("pos_profile"),
 		})
-
-		# Insert the document into the database
-		pos_invoice.insert(ignore_permissions=True)
 
 		if kwargs['bookingType'] == 'payment-later':
 			dt_object =  datetime.strptime(kwargs['receivingTime'], "%I:%M %p")
 			pos_invoice.delivery_date = kwargs.get('posting_date', frappe.utils.nowdate())
 			pos_invoice.delivery_time = dt_object.strftime("%H:%M:00")
+		if kwargs['bookingType'] == 'reservation':
+			dt_object = datetime.strptime(kwargs['receivingDate'], "%Y-%m-%d %I:%M %p")
+			pos_invoice.delivery_date = dt_object.strftime("%Y-%m-%d")
+			pos_invoice.delivery_time = dt_object.strftime("%H:%M:00")
 
+	
+
+		# Add contact details to the POS Invoice
+		if kwargs['bookingType'] == 'delivery':
+			# Fetch contact details
+			#  create new address
+			# address = frappe.new_doc('Address')
+			# address.address_type = 'Shipping'
+			# address.address_title =  kwargs['customer']
+			# address.address_line1 = contact['address']
+			# address.phone = contact['mobile_no']
+			# address.city = kwargs['zone']
+			# address.insert(ignore_permissions=True)
+			# address.save()
+			# frappe.db.commit()
+			pos_invoice.territory = kwargs['zone']
+			pos_invoice.customer_address = kwargs['address_id']
+		
+		# Insert the document into the database
+		pos_invoice.insert(ignore_permissions=True)
 		pos_invoice.save()
 		frappe.db.commit()
 
@@ -85,18 +114,18 @@ class POSInvoiceAPI:
 	@staticmethod
 	def get(**kwargs):
 		"""Fetch a list or a specific POS invoice"""
-		"""Fetch a list or a specific POS invoice"""
 		page = int(kwargs.get('page', 1))  # Default to page 1 if not provided
 		page_size = int(kwargs.get('page_size', 10))  # Default to 10 records per page
 
-		pos_invoice_id = kwargs.get('pos_invoice_id')
-
+		pos_invoice_id = kwargs.get('full_invoice')
 		if pos_invoice_id:
+	  	# Fetch a specific Sales Invoice
 			try:
 				# Fetch the main POS Invoice fields
 				pos_invoice = frappe.db.get_value(
 					'Sales Invoice', pos_invoice_id,
-					['name', 'bookingType', 'customer', 'grand_total', 'status', 'docstatus','total_net_weight'],
+					['name', 'bookingType', 'customer', 'pos_profile', 'grand_total', 'status', 'docstatus', 'total_net_weight',
+					'is_delivered'],
 					as_dict=True
 				)
 				if not pos_invoice:
@@ -119,7 +148,12 @@ class POSInvoiceAPI:
 					pos_invoice.get('customer'),
 					['name', 'customer_name', 'mobile_no'],
 					as_dict=True
+	 			)
+				address = frappe.db.get_value('Address', frappe.db.get_value('Sales Invoice', pos_invoice_id, 'customer_address'),
+					['address_line1', 'phone', 'city'],
+					as_dict=True
 				)
+				pos_invoice['address'] = address
 				# Add items and payments to the pos_invoice dict
 				pos_invoice['items'] = items
 				pos_invoice['customer'] = customer
@@ -142,14 +176,28 @@ class POSInvoiceAPI:
 				start = (page - 1) * page_size
 
 				filters = {}
-				if kwargs.get('status'):
-					filters['status'] = kwargs.get('status')
+				if kwargs.get('docstatus'):
+					filters['docstatus'] = kwargs.get('docstatus')
+				if kwargs.get('pos_invoice_id'):
+					filters['name'] = kwargs.get('pos_invoice_id')
+				if kwargs.get('booking_type'):
+					filters['bookingtype'] = kwargs.get('booking_type')
+				if kwargs.get('customer'):
+					customer_name = kwargs.get('customer')
+					filters['customer_name'] = ['like', f'%{customer_name}%']
+
+				if kwargs.get('start_date') and kwargs.get('end_date'):
+					filters['posting_date'] = ['between', [kwargs['start_date'], kwargs['end_date']]]
+				if kwargs.get('pos_profile'):
+					filters['pos_profile'] = kwargs.get('pos_profile')
+				if kwargs.get('mobile_no'):
+					filters['mobile_no'] = kwargs.get('mobile_no')
 				# Fetch paginated records
-				pos_invoices = frappe.get_all(
+				pos_invoices = frappe.db.get_all(
 					'Sales Invoice',
 					fields=[
-						'name', 'bookingType', 'customer', 'posting_date', 'posting_time', 'contact_mobile',
-						'grand_total', 'outstanding_amount', 'status', 'docstatus','is_return',
+						'name', 'bookingType', 'customer', 'mobile_no', 'posting_date', 'posting_time',
+						'grand_total', 'outstanding_amount', 'status', 'docstatus', 'is_return', 'is_delivered', 'territory', 'delivery', 'delivery_name'
 					],
 					filters=filters,
 					limit_start=start,  # Start from this record
@@ -214,9 +262,17 @@ class POSInvoiceAPI:
 				for payment_data in kwargs['payments']:
 					pos_invoice.append('payments', payment_data)
 			# frappe.db.set_value("Sales Invoice", pos_invoice, {"customer", kwargs.get('customer')})
+			if 'delivery' in kwargs:
+				pos_invoice.delivery = kwargs.get('delivery')
+
 			pos_invoice.save(ignore_permissions=True)
-			pos_invoice.submit()
 			frappe.db.commit()
+
+			if pos_invoice.total == pos_invoice.paid_amount	:
+				pos_invoice.is_delivered = 1
+				pos_invoice.submit()
+				frappe.db.commit()
+   
 			frappe.local.response['message'] = _("POS Invoice {0} updated successfully").format(pos_invoice_id)
 		except frappe.DoesNotExistError:
 			# If POS invoice does not exist
@@ -225,4 +281,4 @@ class POSInvoiceAPI:
 		except Exception as e:
 			# Generic error handling
 			frappe.local.response['http_status_code'] = 500  # HTTP 500 Internal Server Error
-			frappe.local.response['message'] = _("Unable to fetch POS Invoices: {0}").format(str(e))
+			frappe.local.response['message'] = _("Unable to update POS Invoice: {0}").format(str(e))

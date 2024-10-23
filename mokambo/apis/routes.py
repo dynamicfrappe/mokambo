@@ -10,7 +10,8 @@ from mokambo.apis.pos_invoice import POSInvoiceAPI
 from mokambo.apis.pos_profiles import POSProfileAPI
 from mokambo.apis.shift import ShiftAPI
 from mokambo.apis.address import AddressAPI
-
+from mokambo.apis.delivery import DeliveryAPI
+from mokambo.apis.global_endpoints import GlobalEndpointsAPI
 
 
 def _check_and_get_method(cls: type, method: str):
@@ -100,4 +101,14 @@ def shift_api(**kwargs):
 @jwt_required
 def address_api(**kwargs):
 	_routes_api(AddressAPI, **kwargs)
+
+@frappe.whitelist(allow_guest=True)
+@jwt_required
+def global_api(**kwargs):
+	_routes_api(GlobalEndpointsAPI, **kwargs)
+	
+@frappe.whitelist(allow_guest=True)
+@jwt_required
+def delivery_api(**kwargs):
+	_routes_api(DeliveryAPI, **kwargs)
 	
