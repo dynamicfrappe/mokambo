@@ -53,13 +53,14 @@ def _get_customers(**kwargs):
 		# Fetch all POS Profile documents with necessary fields
 		customers = frappe.get_list(
 			'Customer',
-			fields=['name', 'customer_name', 'mobile_no', 'territory'],
+			fields=['name', 'customer_name', 'territory'],
 			filters=filters,
 			ignore_permissions=True
 		)
 		for customer in customers:
 			customer_id = frappe.get_doc("Customer", customer.get("name"))
 			customer_address = frappe.get_value("Address", customer_id.customer_primary_address, 'address_line1')
+			mobile_no = frappe.get_value("Address", customer_id.customer_primary_address, 'phone')
 			customer['address'] = customer_address
 
 		# Success Response
