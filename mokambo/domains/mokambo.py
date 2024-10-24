@@ -44,6 +44,7 @@ data = {
                 "fieldname": "is_delivered",
                 "insert_after": "delivery",
                 "fieldtype":"Check",
+                "allow_on_submit": 1
             },
             
             {
