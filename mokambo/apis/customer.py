@@ -61,6 +61,7 @@ def _get_customers(**kwargs):
 			customer_id = frappe.get_doc("Customer", customer.get("name"))
 			customer_address = frappe.get_value("Address", customer_id.customer_primary_address, 'address_line1')
 			mobile_no = frappe.get_value("Address", customer_id.customer_primary_address, 'phone')
+			customer['mobile_no'] = mobile_no
 			customer['address'] = customer_address
 
 		# Success Response
