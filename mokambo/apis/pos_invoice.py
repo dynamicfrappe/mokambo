@@ -271,11 +271,8 @@ class POSInvoiceAPI:
 				paid_amount = 0.0
 				base_paid_amount = 0.0
 				for data in pos_invoice.payments:
-					data.base_amount = flt(data.amount * pos_invoice.conversion_rate, pos_invoice.precision("base_paid_amount"))
 					paid_amount += data.amount
-					base_paid_amount += data.base_amount
 				pos_invoice.paid_amount = paid_amount
-				pos_invoice.base_paid_amount = base_paid_amount	
 
 			
 			
