@@ -106,7 +106,7 @@ def _add_customer(**kwargs):
 		# Update the customer document with contact, address, and user details
 		customer.customer_primary_contact = contact.name
 		customer.customer_primary_address = address.name
-		customer.mobile_no = contact.mobile_no
+		customer.mobile_no = address.phone
 		customer.save(ignore_permissions=True)
 
 		frappe.db.commit()

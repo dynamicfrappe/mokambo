@@ -89,6 +89,21 @@ data = {
         ],
 	},
 		"properties": [
-            		
+        {
+            "doctype": "Sales Invoice",
+			"doctype_or_field": "DocField",
+			"fieldname": "payments",
+			"property": "allow_on_submit",
+			"property_type": "Check",
+			"value": 1
+        },
+        {
+            "doctype": "Sales Invoice",
+			"doctype_or_field": "DocField",
+			"fieldname": "paid_amount",
+			"property": "allow_on_submit",
+			"property_type": "Check",
+			"value": 1
+        },
 	],  
 }

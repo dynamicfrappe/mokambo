@@ -4,6 +4,7 @@ from datetime import datetime
 
 from mokambo.apis.auth import get_user_pos_profile
 from mokambo.apis.item import _get_bulk_item_prices, _get_bulk_item_stock, _get_items_stock_prices
+from erpnext.erpnext.accounts.doctype.sales_invoice.sales_invoice.SalesInvoice import set_paid_amount
 
 
 def _get_payment_mode(default=False):
@@ -39,6 +40,7 @@ def create_pos_invoice(**kwargs):
 
 		# Fetch the default mode of payment from the POS Profile
 		default_payment_mode = _get_payment_mode(default=True)
+		warehouse = frappe.db.get_value('POS Profile', kwargs.get('pos_profile'), 'warehouse')
 
 		# Create a new POS Invoice document
 		pos_invoice = frappe.get_doc({
@@ -59,7 +61,10 @@ def create_pos_invoice(**kwargs):
 			'posting_date': kwargs.get('posting_date', frappe.utils.nowdate()),  # Optional field
 			'posting_time': kwargs.get('posting_time', frappe.utils.nowtime()),  # Optional field
 			'pos_profile': kwargs.get("pos_profile"),
+   			'update_stock': 1,
+			'set_warehouse': warehouse
 		})
+
 
 		if kwargs['bookingType'] == 'payment-later':
 			dt_object =  datetime.strptime(kwargs['receivingTime'], "%I:%M %p")
@@ -124,7 +129,7 @@ class POSInvoiceAPI:
 				# Fetch the main POS Invoice fields
 				pos_invoice = frappe.db.get_value(
 					'Sales Invoice', pos_invoice_id,
-					['name', 'bookingType', 'customer', 'pos_profile', 'grand_total', 'status', 'docstatus', 'total_net_weight',
+					['name', 'bookingType', 'customer', 'pos_profile', 'grand_total', 'paid_amount', 'status', 'docstatus', 'total_net_weight',
 					'is_delivered'],
 					as_dict=True
 				)
@@ -247,31 +252,50 @@ class POSInvoiceAPI:
 			if pos_invoice:
 				pos_invoice = frappe.get_doc('Sales Invoice', pos_invoice[0].name)
 
-			if pos_invoice.docstatus == 1:
-				# Invoice is submitted
-				frappe.local.response['message'] = _("Sales Invoice {0} is already submitted").format(pos_invoice_id)
+			if pos_invoice.docstatus == 2:
+				# Invoice is cancelled
+				frappe.local.response['message'] = _("Sales Invoice {0} is Cancelled").format(pos_invoice_id)
 				frappe.local.response['http_status_code'] = 400  # HTTP 404 Not Found
 				return
-			# Update customer field if provided
-			if 'customer' in kwargs:
-				pos_invoice.customer = kwargs.get('customer')
+
+			# # Update customer field if provided
+			# if 'customer' in kwargs:
+			# 	pos_invoice.customer = kwargs.get('customer')
 
 			# Update payments if provided
 			if 'payments' in kwargs:
-				# Clear existing payments
 				for payment_data in kwargs['payments']:
+					payment_data['base_amount'] = payment_data['amount']
 					pos_invoice.append('payments', payment_data)
+				set_paid_amount(pos_invoice)
+
+			
+			
 			# frappe.db.set_value("Sales Invoice", pos_invoice, {"customer", kwargs.get('customer')})
-			if 'delivery' in kwargs:
+			if 'delivery' in kwargs and pos_invoice.docstatus == 0:
 				pos_invoice.delivery = kwargs.get('delivery')
 
 			pos_invoice.save(ignore_permissions=True)
 			frappe.db.commit()
-
-			if pos_invoice.total == pos_invoice.paid_amount	:
-				pos_invoice.is_delivered = 1
-				pos_invoice.submit()
-				frappe.db.commit()
+     
+			if pos_invoice.bookingtype == 'payment-now' or pos_invoice.bookingtype == 'delivery':
+				if pos_invoice.total == pos_invoice.paid_amount	:
+					pos_invoice.is_delivered = 1
+					pos_invoice.save(ignore_permissions=True)
+					pos_invoice.submit()
+					frappe.db.commit()
+			else:
+				if pos_invoice.paid_amount > 0.0 and pos_invoice.paid_amount < pos_invoice.total:
+					pos_invoice.save(ignore_permissions=True)
+					pos_invoice.submit()
+					frappe.db.commit()
+				if pos_invoice.total == pos_invoice.paid_amount	:
+					pos_invoice.is_delivered = 1
+					pos_invoice.save(ignore_permissions=True)
+					if pos_invoice.docstatus == 0:
+						pos_invoice.submit()
+					frappe.db.commit()
+				
    
 			frappe.local.response['message'] = _("POS Invoice {0} updated successfully").format(pos_invoice_id)
 		except frappe.DoesNotExistError:
