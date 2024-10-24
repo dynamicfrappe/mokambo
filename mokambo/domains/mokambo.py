@@ -12,6 +12,7 @@ data = {
                 "fieldtype":"Select",
                 "options":"payment-now\ndelivery\npayment-later\nreservation",
             },
+            # These fields are added by Mokambo for delivering details
             {
                 "label": "Delivery Date",
                 "fieldname": "delivery_date",
@@ -44,6 +45,7 @@ data = {
                 "insert_after": "delivery",
                 "fieldtype":"Check",
             },
+            
             {
                 "label": "Request Source",
                 "fieldname": "request_source",

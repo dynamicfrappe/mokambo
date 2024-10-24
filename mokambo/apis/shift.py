@@ -47,7 +47,7 @@ def open_shift(**kwargs):
 			} for method in kwargs['methods']],
 		})
 	opening_shift.insert(ignore_permissions=True)
-	opening_shift.save()
+	opening_shift.save(ignore_permissions=True)
 	opening_shift.submit()
 	frappe.db.commit()
 	response = {'shift_id': opening_shift.name}

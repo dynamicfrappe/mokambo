@@ -5,11 +5,12 @@ frappe.ui.form.on("POS Profile", {
     },
     
     refresh: function (frm) {  
-        console.log(444444444444)
+      // filter the delivery in delivery table by designation of employee
         frm.set_query("delivery", "delivery_table", function () {
             return {
               filters: [
                 ["designation", "=", "Delivery"],
+                ["status", "=", "Active"],  
               ],
             };
           });

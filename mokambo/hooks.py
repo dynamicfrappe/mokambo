@@ -179,6 +179,7 @@ override_whitelisted_methods = {
 	'address': "mokambo.apis.routes.address_api",
 	'delivery': "mokambo.apis.routes.delivery_api",
 	'global': "mokambo.apis.routes.global_api",
+	'zone': "mokambo.apis.routes.zone_api",
 }
 
 # each overriding function accepts a `data` argument;

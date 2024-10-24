@@ -12,6 +12,7 @@ from mokambo.apis.shift import ShiftAPI
 from mokambo.apis.address import AddressAPI
 from mokambo.apis.delivery import DeliveryAPI
 from mokambo.apis.global_endpoints import GlobalEndpointsAPI
+from mokambo.apis.zone import ZoneAPI
 
 
 def _check_and_get_method(cls: type, method: str):
@@ -111,4 +112,9 @@ def global_api(**kwargs):
 @jwt_required
 def delivery_api(**kwargs):
 	_routes_api(DeliveryAPI, **kwargs)
+ 
+@frappe.whitelist(allow_guest=True)
+@jwt_required
+def zone_api(**kwargs):
+	_routes_api(ZoneAPI, **kwargs)
 	
