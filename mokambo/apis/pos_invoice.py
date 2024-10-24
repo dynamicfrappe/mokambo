@@ -4,7 +4,6 @@ from datetime import datetime
 
 from mokambo.apis.auth import get_user_pos_profile
 from mokambo.apis.item import _get_bulk_item_prices, _get_bulk_item_stock, _get_items_stock_prices
-from erpnext.erpnext.accounts.doctype.sales_invoice.sales_invoice.SalesInvoice import set_paid_amount
 
 
 def _get_payment_mode(default=False):
@@ -267,7 +266,14 @@ class POSInvoiceAPI:
 				for payment_data in kwargs['payments']:
 					payment_data['base_amount'] = payment_data['amount']
 					pos_invoice.append('payments', payment_data)
-				set_paid_amount(pos_invoice)
+				paid_amount = 0.0
+				base_paid_amount = 0.0
+				for data in pos_invoice.payments:
+					data.base_amount = flt(data.amount * pos_invoice.conversion_rate, pos_invoice.precision("base_paid_amount"))
+					paid_amount += data.amount
+					base_paid_amount += data.base_amount
+				pos_invoice.paid_amount = paid_amount
+				pos_invoice.base_paid_amount = base_paid_amount	
 
 			
 			
